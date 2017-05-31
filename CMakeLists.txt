@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_CXX_COMPILER g++-5)
 set(CMAKE_CXX_FLAGS "-std=c++14 -O0 -g -Wall -Wextra -Wconversion")
 
+project(SimpleVectorization)
+
 file(GLOB SRC src/*.cpp)
 add_executable(main src/main.cpp ${SRC})
 
