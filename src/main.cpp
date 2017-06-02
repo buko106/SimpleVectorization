@@ -34,9 +34,17 @@ int main( int argc, char* argv[] ){
   std::string input = argmap["input"].as<std::string>();
   cv::Mat im = imread_as_grayscale(input);
   skeleton sk(im,true);
-  sk.thinning(ZHANG);
+  cv::Mat binary = sk.binary.clone();
+  sk.thinning(ZHANGSUEN,true);
   
-  std::cout << sk.binary << std::endl;
-  std::cout << sk.thickness << std::endl;
+  cv::namedWindow("gray", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+  cv::imshow("gray", im);
+  cv::waitKey(0);
+  cv::namedWindow("binary", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+  cv::imshow("binary", binary);
+  cv::waitKey(0);
+  cv::namedWindow("thinning", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+  cv::imshow("thinning", sk.binary);
+  cv::waitKey(0);
   return 0;
 }
