@@ -46,5 +46,13 @@ int main( int argc, char* argv[] ){
   cv::namedWindow("thinning", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
   cv::imshow("thinning", sk.binary);
   cv::waitKey(0);
+
+  double maxVal;
+  cv::minMaxLoc(sk.thickness, NULL, &maxVal, NULL, NULL);
+  std::cout << maxVal << std::endl;
+  cv::namedWindow("thickness", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+  cv::imshow("thickness", sk.thickness * (255./maxVal));
+  cv::waitKey(0);
+  
   return 0;
 }
