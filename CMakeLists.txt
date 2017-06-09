@@ -9,7 +9,7 @@ file(GLOB SRC src/*.cpp)
 add_executable(main src/main.cpp ${SRC})
 
 find_package(OpenCV REQUIRED)
-find_package( Boost COMPONENTS program_options REQUIRED )
+find_package( Boost COMPONENTS program_options filesystem REQUIRED )
 target_link_libraries(main ${OpenCV_LIBS})
 target_link_libraries(main ${Boost_LIBRARIES})
 include_directories(./eigen)

@@ -2,23 +2,26 @@
 #include"thinning.hpp"
 #include<iostream>
 #include<boost/program_options.hpp>
+#include<boost/filesystem.hpp>
+#include<boost/filesystem/fstream.hpp>
 
-using namespace boost::program_options;
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
-options_description set_options(){
-  options_description opt("Options");
+po::options_description set_options(){
+  po::options_description opt("Options");
   opt.add_options()
-    ("help,h"   ,                         "Show help")
-    ("input,i"  , value<std::string>(),   "Input image file")
-    ("output,o" , value<std::string>(),   "Output directory");
+    ("help,h"   ,                            "Show help")
+    ("input,i"  , po::value<fs::path>(),  "Input image file")
+    ("output,o" , po::value<fs::path>(),  "Output directory");
   return opt;
 }
 
 int main( int argc, char* argv[] ){
   // set options
-  options_description opt = set_options();
+  po::options_description opt = set_options();
   // parse command line
-  variables_map argmap;
+  po::variables_map argmap;
   try{
     store(parse_command_line(argc, argv, opt), argmap);
   }catch (std::exception& ex){
@@ -31,14 +34,30 @@ int main( int argc, char* argv[] ){
     std::cerr << opt << std::endl;
     exit(1);
   }
-  // processing
-  std::string input = argmap["input"].as<std::string>();
-  cv::Mat im = imread_as_grayscale(input);
+
+  // error handling of file I/O
+  fs::path input = argmap["input"].as<fs::path>();
+  fs::path output = argmap["output"].as<fs::path>();
+  if( !fs::exists(input) ){
+    std::cerr << "[ERROR] No such file( " << input << " )" <<std::endl;
+    exit(1);
+  }
+  cv::Mat im = imread_as_grayscale(input.generic_string());
   if( im.empty() ){
-    std::cerr << "[ERROR] Unable to read image(\"" << input << "\")" << std::endl;
+    std::cerr << "[ERROR] Unable to read image( " << input << " )" << std::endl;
     exit(1);
   }
 
+  if( fs::exists(output) ){
+    std::cerr<< "[WARNING] " << output << " already exists" << std::endl;
+  }else if( !fs::create_directories(output) ){
+    std::cerr<< "[ERROR] Unable to create directory( "<< output << ")" <<std::endl;
+    exit(1);
+  }
+
+  fs::ofstream log(output / "log");
+
+  // processing
   skeleton sk(im,true);
   cv::Mat binary = sk.binary.clone();
   sk.thinning(ZHANGSUEN,true);
