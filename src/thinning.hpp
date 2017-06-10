@@ -13,6 +13,6 @@ private:
 public: 
   cv::Mat binary;
   cv::Mat thickness;
-  skeleton( cv::Mat, bool = false );
+  skeleton( cv::Mat );
   void thinning( THINNING_METHOD = TRAPPEDBALL, bool = false );
 };

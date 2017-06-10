@@ -2,23 +2,18 @@
 #include<opencv2/imgproc/imgproc.hpp>
 #include<iostream>
 
-skeleton::skeleton( cv::Mat input, bool binarize ){
-  if( binarize ){
-    int dummy  = 0;
-    int maxVal = 255;
-    cv::threshold( input, binary, dummy, maxVal, cv::THRESH_BINARY|cv::THRESH_OTSU);
-  }else{
-    binary = input;
-  }
+skeleton::skeleton( cv::Mat input ){
+  input.copyTo(binary);
+  return;
 }
 
-void skeleton::thinning( THINNING_METHOD method, bool reverse ){
+void skeleton::thinning( THINNING_METHOD method, bool inv ){
   if( ZHANGSUEN != method ){
     std::cerr << "[ERROR] in skeleton::thinning : Unknown method" << std::endl;
     exit(1);
   }
   if( ZHANGSUEN == method ){
-    skeleton::ZhangSuenThinning( reverse );
+    skeleton::ZhangSuenThinning( inv );
   }
   return;
 }
@@ -82,8 +77,8 @@ void skeleton::ZhangSuenIteration( int pattern ){
 }
 
 
-void skeleton::ZhangSuenThinning( bool reverse ){
-  if( reverse ){
+void skeleton::ZhangSuenThinning( bool inv ){
+  if( inv ){
     binary = (255 - binary) / 255;
   }else{
     binary = binary / 255;
@@ -119,7 +114,7 @@ void skeleton::ZhangSuenThinning( bool reverse ){
 
   thickness = temp & binary*255;
   
-  if( reverse ){
+  if( inv ){
     binary = (1 - binary) * 255;
   }else{
     binary = binary * 255;

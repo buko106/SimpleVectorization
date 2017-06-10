@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ){
     std::cerr << "[ERROR] No such file( " << input << " )" <<std::endl;
     exit(1);
   }
-  cv::Mat im = imread_as_grayscale(input.generic_string());
+  cv::Mat im = imread_as_grayscale(input.generic_string(),true);
   if( im.empty() ){
     std::cerr << "[ERROR] Unable to read image( " << input << " )" << std::endl;
     exit(1);
@@ -58,8 +58,20 @@ int main( int argc, char* argv[] ){
   fs::ofstream log(output / "log");
 
   // processing
-  skeleton sk(im,true);
-  cv::Mat binary = sk.binary.clone();
+  cv::Mat binary = to_binary_image(im);
+
+  int radius=5;
+  cv::Mat opened;
+  cv::morphologyEx(255-binary,
+                   opened,
+                   cv::MORPH_OPEN,
+                   getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2*radius+1,2*radius+1)),
+                   cv::Point(-1,-1),
+                   1 // iteration
+                   );
+
+  skeleton sk(opened);
+
   sk.thinning(ZHANGSUEN,true);
   
   double maxVal;
@@ -69,6 +81,8 @@ int main( int argc, char* argv[] ){
   cv::imshow("image", im);
   cv::waitKey(0);
   cv::imshow("image", binary);
+  cv::waitKey(0);
+  cv::imshow("image", opened);
   cv::waitKey(0);
   cv::imshow("image", sk.binary);
   cv::waitKey(0);
