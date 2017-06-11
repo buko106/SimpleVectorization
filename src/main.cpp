@@ -39,40 +39,31 @@ int main( int argc, char* argv[] ){
   fs::path input = argmap["input"].as<fs::path>();
   fs::path output = argmap["output"].as<fs::path>();
   if( !fs::exists(input) ){
-    std::cerr << "[ERROR] No such file( " << input << " )" <<std::endl;
+    std::cerr << "[ERROR] No such file " << input <<std::endl;
     exit(1);
   }
   cv::Mat im = imread_as_grayscale(input.generic_string(),true);
   if( im.empty() ){
-    std::cerr << "[ERROR] Unable to read image( " << input << " )" << std::endl;
+    std::cerr << "[ERROR] Unable to read image " << input << std::endl;
     exit(1);
   }
 
   if( fs::exists(output) ){
-    std::cerr<< "[WARNING] " << output << " already exists" << std::endl;
+    std::cerr<< "[WARNING] Directory " << output << " already exists" << std::endl;
   }else if( !fs::create_directories(output) ){
-    std::cerr<< "[ERROR] Unable to create directory( "<< output << ")" <<std::endl;
+    std::cerr<< "[ERROR] Unable to create directory "<< output <<std::endl;
     exit(1);
   }
 
   fs::ofstream log(output / "log");
 
   // processing
-  cv::Mat binary = to_binary_image(im);
+  cv::Mat binary = to_binary_image(im,15);
 
-  int radius=5;
-  cv::Mat opened;
-  cv::morphologyEx(255-binary,
-                   opened,
-                   cv::MORPH_OPEN,
-                   getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2*radius+1,2*radius+1)),
-                   cv::Point(-1,-1),
-                   1 // iteration
-                   );
+  skeleton sk(binary);
 
-  skeleton sk(opened);
-
-  sk.thinning(ZHANGSUEN,true);
+  double radius = 3;
+  sk.thinning(TRAPPEDBALL,false,radius);
   
   double maxVal;
   cv::minMaxLoc(sk.thickness, NULL, &maxVal, NULL, NULL);
@@ -82,12 +73,10 @@ int main( int argc, char* argv[] ){
   cv::waitKey(0);
   cv::imshow("image", binary);
   cv::waitKey(0);
-  cv::imshow("image", opened);
-  cv::waitKey(0);
   cv::imshow("image", sk.binary);
   cv::waitKey(0);
-  cv::imshow("image", sk.thickness * (255./maxVal));
+  cv::imshow("image", 255-(sk.thickness * (255./maxVal)));
   cv::waitKey(0);
-  
+
   return 0;
 }

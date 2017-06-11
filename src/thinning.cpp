@@ -7,13 +7,30 @@ skeleton::skeleton( cv::Mat input ){
   return;
 }
 
-void skeleton::thinning( THINNING_METHOD method, bool inv ){
-  if( ZHANGSUEN != method ){
+void skeleton::thinning( THINNING_METHOD method, bool inv, double param ){
+  if( ZHANGSUEN != method && TRAPPEDBALL != method ){
     std::cerr << "[ERROR] in skeleton::thinning : Unknown method" << std::endl;
     exit(1);
   }
+  // convert to 0/1 image.
+  // 1 is foreground
+  if( inv ){
+    binary = (255 - binary) / 255;
+  }else{
+    binary = binary / 255;
+  }
+  thickness = cv::Mat::zeros( binary.size(), CV_8UC1 );
+  
   if( ZHANGSUEN == method ){
-    skeleton::ZhangSuenThinning( inv );
+    ZhangSuenThinning();
+  }else if( TRAPPEDBALL == method ){
+    TrappedBallThinning( static_cast<int>(param) );
+  }
+
+  if( inv ){
+    binary = (1 - binary) * 255;
+  }else{
+    binary = binary * 255;
   }
   return;
 }
@@ -77,14 +94,8 @@ void skeleton::ZhangSuenIteration( int pattern ){
 }
 
 
-void skeleton::ZhangSuenThinning( bool inv ){
-  if( inv ){
-    binary = (255 - binary) / 255;
-  }else{
-    binary = binary / 255;
-  }
+void skeleton::ZhangSuenThinning(){
 
-  thickness = cv::Mat::zeros( binary.size(),  CV_8UC1 );
   cv::Mat prev = cv::Mat::zeros( binary.size(), CV_8UC1 );
   cv::Mat diff;
 
@@ -112,12 +123,107 @@ void skeleton::ZhangSuenThinning( bool inv ){
     }
   }
 
-  thickness = temp & binary*255;
+  thickness = temp & (binary*255);
   
-  if( inv ){
-    binary = (1 - binary) * 255;
-  }else{
-    binary = binary * 255;
+  return;
+}
+
+void skeleton::TrappedBallOpening( int radius ){
+  cv::Mat ball = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2*radius+1,2*radius+1));
+  cv::morphologyEx(binary,
+                   binary,
+                   cv::MORPH_OPEN,
+                   ball,
+                   cv::Point(-1,-1),
+                   1 // iteration
+                   );
+
+  return;
+}
+
+void skeleton::TrappedBallThinning( int radius ){
+  binary = 1-binary;
+  TrappedBallOpening(radius);
+  // iteration
+  // 0: foreground(drawing line)
+  // 1: background
+  // 2,3,.. : regions
+  int region = 2;
+  for( int y = 0 ; y < binary.rows ; ++y ){
+    for( int x = 0 ; x < binary.cols ; ++x ){
+      if( 1 == binary.data[ y*binary.step + x*binary.elemSize()] ){
+        cv::floodFill( binary,
+                       cv::Point(x,y),
+                       region,
+                       0, // Rect*
+                       0, // loDiff
+                       0, // upDiff
+                       4  // flags
+                       );
+        region += 1;
+      }
+    }
   }
+  // information
+  std::cerr << "[INFO] TrappedBallThinning : " << region << " regions detected" << std::endl;
+
+  // dilation
+  bool update;
+  int num=0;
+  int dx[]={ -1,  1,  0,  0 };
+  int dy[]={  0,  0, -1,  1 };
+  int dirs = 4;
+
+  do{
+    // initialize
+    update = false;
+    num += 1;
+    // dilation
+    for( int r = 2; r <= region; ++r ){
+      // for each segment
+      cv::Mat updateMask = cv::Mat::zeros( binary.size(), CV_8UC1 );
+      for( int y = 0 ; y < binary.rows ; ++y ){
+        for( int x = 0 ; x < binary.cols ; ++x ){
+          if( 0 == binary.data[ y*binary.step + x*binary.elemSize()] ){
+            // If foreground point P(x,y) is adjacent to only r
+            int count_r=0;
+            int count_others=0;
+            for( int i = 0 ; i < dirs; ++i ){
+              int px = x + dx[i];
+              int py = y + dy[i];
+              if( 0 <= px && px < binary.cols && 0<= py && py < binary.rows ){
+                if( r == binary.data[ py*binary.step + px*binary.elemSize()] ){
+                  count_r += 1;
+                }else if( 0 != binary.data[ py*binary.step + px*binary.elemSize()] ){
+                  count_others += 1;
+                }
+              }
+            }
+            if( count_others == 0 && count_r > 0 ){
+              updateMask.data[ y*updateMask.step + x*updateMask.elemSize()] = 1;
+              update = true;
+            }
+          }
+        }
+      }
+      thickness += updateMask * num;
+      binary += updateMask * r;
+    }
+  }while( update );
+  
+  // finalinze
+  for( int y = 0 ; y < binary.rows ; ++y ){
+    for( int x = 0 ; x < binary.cols ; ++x ){
+      if( 0 == binary.data[ y*binary.step + x*binary.elemSize()] ){
+        // line
+        binary.data[ y*binary.step + x*binary.elemSize()] = 1;
+      }else{
+        //background
+        binary.data[ y*binary.step + x*binary.elemSize()] = 0;
+      }
+    }
+  }
+  dilate(thickness,thickness,cv::Mat());
+  thickness &= binary*255;
   return;
 }

@@ -8,21 +8,14 @@ cv::Mat imread_as_grayscale( std::string filename , bool inv ){
   return image;
 }
 
-cv::Mat to_binary_image( cv::Mat gray, bool adaptive, int blockSize ){
+cv::Mat to_binary_image( cv::Mat gray, double thresh ){
   cv::Mat dst;
   double maxValue=255;
-  if( adaptive ){
-    double C=0; // constant offset of Threashold value
-    cv::adaptiveThreshold(gray,
-                          dst,
-                          maxValue,
-                          cv::ADAPTIVE_THRESH_MEAN_C,
-                          cv::THRESH_BINARY,
-                          blockSize,
-                          C);
-  }else{
-    double dummy=0;
+  double dummy=0;
+  if( (thresh<0) | (thresh>255) ){
     cv::threshold(gray,dst,dummy,maxValue,cv::THRESH_BINARY|cv::THRESH_OTSU);
+  }else{
+    cv::threshold(gray,dst,thresh,maxValue,cv::THRESH_BINARY);
   }
 
   return dst;

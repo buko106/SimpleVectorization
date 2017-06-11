@@ -9,10 +9,12 @@ enum THINNING_METHOD{
 class skeleton{
 private:
   void ZhangSuenIteration( int );
-  void ZhangSuenThinning( bool );
+  void ZhangSuenThinning();
+  void TrappedBallOpening( int );
+  void TrappedBallThinning( int );
 public: 
   cv::Mat binary;
   cv::Mat thickness;
   skeleton( cv::Mat );
-  void thinning( THINNING_METHOD = TRAPPEDBALL, bool = false );
+  void thinning( THINNING_METHOD = TRAPPEDBALL, bool = false, double = -1 );
 };
