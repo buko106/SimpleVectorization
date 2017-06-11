@@ -78,5 +78,38 @@ int main( int argc, char* argv[] ){
   cv::imshow("image", 255-(sk.thickness * (255./maxVal)));
   cv::waitKey(0);
 
+  
+  cv::Mat feature = cv::Mat::zeros(sk.binary.size(),CV_8UC1);
+
+  int dx[] = {  0,  1,  1,  1,  0, -1, -1, -1};
+  int dy[] = { -1, -1,  0,  1,  1,  1,  0, -1};
+  int dirs = 8;
+  
+  for( int y = 0 ; y < sk.binary.rows ; ++y ){
+    for( int x = 0 ; x < sk.binary.cols ; ++x ){
+      if( 0 != sk.binary.data[ y*sk.binary.step + x*sk.binary.elemSize()] ){
+        int c=0;
+        for( int i = 0 ; i < dirs ; ++i ){
+          int nxt = (i+1)%dirs;
+          int px = x + dx[i];
+          int py = y + dy[i];
+          int nx = x + dx[nxt];
+          int ny = y + dy[nxt];
+          if( 0 == sk.binary.data[ py*sk.binary.step + px*sk.binary.elemSize()] &&
+              0 != sk.binary.data[ ny*sk.binary.step + nx*sk.binary.elemSize()] )
+            c += 1;
+        }
+        if( c==1 || c==3 || c==4 ){
+          feature.data[ y*feature.step + x*feature.elemSize() ] = 1;
+        }
+      }
+    }
+  }
+  
+  sk.binary = (sk.binary & ((1-feature)*31) ) | feature*255;
+  cv::imshow("image", sk.binary);
+  cv::imwrite( (output/"feature.pgm").generic_string() , sk.binary );
+  cv::waitKey(0);
+
   return 0;
 }
