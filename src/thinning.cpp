@@ -170,10 +170,10 @@ void skeleton::TrappedBallThinning( int radius ){
   // dilation
   bool update;
   int num=0;
-  int dx[]={ -1,  1,  0,  0 };
-  int dy[]={  0,  0, -1,  1 };
-  int dirs = 4;
-
+  int dx[] = {  0,  1,  1,  1,  0, -1, -1, -1};
+  int dy[] = { -1, -1,  0,  1,  1,  1,  0, -1};
+  int dirs = 8;
+  
   do{
     // initialize
     update = false;
