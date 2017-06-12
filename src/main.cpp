@@ -70,36 +70,22 @@ int main( int argc, char* argv[] ){
   double maxVal;
   cv::minMaxLoc(sk.thickness, NULL, &maxVal, NULL, NULL);
 
-  cv::namedWindow("image", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
-  cv::imshow("image", im);
-  cv::waitKey(0);
-  cv::imshow("image", binary);
-  cv::waitKey(0);
-  cv::imshow("image", sk.binary);
-  cv::waitKey(0);
-  cv::imshow("image", 255-(sk.thickness * (255./maxVal)));
-  cv::waitKey(0);
   cv::imwrite((output/"binary.png").generic_string(),binary);
   cv::imwrite((output/"skeleton.png").generic_string(),sk.binary);
   cv::imwrite((output/"thickness.png").generic_string(), 255-(sk.thickness * (255./maxVal)));
   topology tp(sk,false);
-  
 
-  size_t N = tp.edge.size();
   double w_max = -DBL_MAX;
-  for( size_t i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     for( size_t j = 0 ; j < tp.edge[i].size() ; ++j ){
       w_max = std::max<double>(w_max,tp.edge[i][j].w);
     }
   }
 
-  std::cout << "w_max=" << w_max << std::endl;
-  
-
   fs::ofstream graph(output / "graph.svg");
   //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
   graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
-  for( size_t i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     auto result = bezier_cubic_fitting( tp.edge[i], w_max );
     auto curve = result.second;
 
@@ -111,7 +97,51 @@ int main( int argc, char* argv[] ){
     }
     graph << "\" stroke=\"blue\" stroke-width=\"3\"  fill=\"none\" />\n" ;
   }
+
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
+    graph << "\t<circle cx=\"" << tp.edge[i][0].x 
+          << "\" cy=\"" << tp.edge[i][0].y 
+          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
+    graph << "\t<circle cx=\"" << tp.edge[i][tp.edge[i].size()-1].x 
+          << "\" cy=\"" << tp.edge[i][tp.edge[i].size()-1].y 
+          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
+  }
   graph <<  "</svg>" << std::endl;
+
+  std::cout << "w_max=" << w_max << std::endl;
+  
+  graph.close();
+
+  tp.refine(0.5);
+  graph.open(output / "refined.svg");
+  //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
+  graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
+    auto result = bezier_cubic_fitting( tp.edge[i], w_max );
+    auto curve = result.second;
+
+    graph << "\t<path d=\"" ;
+    for( size_t p = 0 ; p < curve.size() ; ++p ){
+      if( p == 0 ) graph << " M ";
+      if( p == 1 ) graph << " C ";
+      graph << " " << curve[p].first << " " << curve[p].second;
+    }
+    graph << "\" stroke=\"blue\" stroke-width=\"3\"  fill=\"none\" />\n" ;
+  }
+
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
+    graph << "\t<circle cx=\"" << tp.edge[i][0].x 
+          << "\" cy=\"" << tp.edge[i][0].y 
+          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
+    graph << "\t<circle cx=\"" << tp.edge[i][tp.edge[i].size()-1].x 
+          << "\" cy=\"" << tp.edge[i][tp.edge[i].size()-1].y 
+          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
+  }
+  graph <<  "</svg>" << std::endl;
+
+  std::cout << "w_max=" << w_max << std::endl;
+  
+  graph.close();
 
   return 0;
 }

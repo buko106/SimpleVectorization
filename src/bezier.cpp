@@ -77,7 +77,21 @@ bezier_cubic_fitting( const edge_t &edge, double w_max ){
   double px1 = x12(0); double py1 = y12(0);
   double px2 = x12(1); double py2 = y12(1);
   
-  double err = 0.0; // temporally
+  double err = 0.0;
+  
+  for( int i = 0 ; i < N ; ++i ){
+    double t = static_cast<double>(i) / static_cast<double>(N);
+    double weight = 1.0 - wp[i]/2.0;
+    double t0 = (1.0-t) * (1.0-t) * (1.0-t);
+    double t1 =      t  * (1.0-t) * (1.0-t);
+    double t2 =      t  *      t  * (1.0-t);
+    double t3 =      t  *      t  *      t ;
+    double px = edge[i].x;
+    double py = edge[i].y;
+    double diff_x = t0 * px0 + 3 * t1 * px1 + 3 * t2 * px2 + t3 * px3 - px;
+    double diff_y = t0 * py0 + 3 * t1 * py1 + 3 * t2 * py2 + t3 * py3 - py;
+    err += weight * ( diff_x * diff_x + diff_y * diff_y );
+  }
   
   std::vector<std::pair<double,double> > ret;
   ret.push_back(std::make_pair(px0,py0));

@@ -1,7 +1,13 @@
 #include"topology.hpp"
+#include"bezier.hpp"
 #include<iostream>
+#include <queue>
 
-#include<opencv2/highgui/highgui.hpp>
+// #include<opencv2/highgui/highgui.hpp>
+bool operator<( const pixel& a, const pixel& b){
+  return ( a.x<b.x ? true : ( a.y<b.y ? true : a.w < b.w ));
+}
+
 topology::topology( const skeleton &sk, bool inv ){
   create_topology( sk, inv );
   return;
@@ -135,6 +141,61 @@ void topology::create_topology( const skeleton &sk, bool inv ){
 }
 
 void topology::refine( double tolerance ){
+  double w_max = -DBL_MAX;
+  for( size_t i = 0 ; i < edge.size() ; ++i ){
+    for( size_t j = 0 ; j < edge[i].size() ; ++j ){
+      w_max = std::max<double>(w_max,edge[i][j].w);
+    }
+  }
+
+  double total_error = 0.0;
+  int    total_pixel = 0;
+  std::priority_queue< std::pair<double,edge_t> > pq;
+  for( size_t i = 0; i < edge.size(); ++i ){
+    auto result = bezier_cubic_fitting( edge[i], w_max );
+    double err = result.first;
+    total_error += err;
+    total_pixel += static_cast<int>(edge[i].size());
+    pq.push(make_pair(err,edge[i]));
+  }
+
+  while( total_error/static_cast<double>(total_pixel) >= tolerance){
+    auto top = pq.top();
+    double err = top.first;
+    edge_t curve = top.second;
+
+    pq.pop();
+
+    int left  = 0;
+    int right = static_cast<int>(curve.size());
+    while( true ){
+      int med = (left+right)/2;
+      edge_t l_curve(curve.begin(),curve.begin()+med);
+      auto   l_result = bezier_cubic_fitting( l_curve, w_max );
+      double l_err = l_result.first;
+
+      edge_t r_curve(curve.begin()+(med-1),curve.end());
+      auto   r_result = bezier_cubic_fitting( r_curve, w_max );
+      double r_err = r_result.first;
+      
+      if( l_err < r_err ) left  = med;
+      else                right = med;
+
+      if( left >= right-1 ){
+        pq.push(make_pair(l_err,l_curve));
+        pq.push(make_pair(r_err,r_curve));
+        total_error += l_err + r_err - err;
+        break;
+      }
+    }
+  }
+  // finalize
+  edge.resize(0);
+  while( !pq.empty() ){
+    auto top = pq.top();
+    pq.pop();
+    edge.push_back(top.second);
+  }
   return;
 }
 
