@@ -78,7 +78,9 @@ int main( int argc, char* argv[] ){
   cv::waitKey(0);
   cv::imshow("image", 255-(sk.thickness * (255./maxVal)));
   cv::waitKey(0);
-
+  cv::imwrite((output/"binary.png").generic_string(),binary);
+  cv::imwrite((output/"skeleton.png").generic_string(),sk.binary);
+  cv::imwrite((output/"thickness.png").generic_string(), 255-(sk.thickness * (255./maxVal)));
   topology tp(sk,false);
   
   return 0;

@@ -1,5 +1,4 @@
 #include"topology.hpp"
-#include<Eigen/Dense>
 #include<iostream>
 
 #include<opencv2/highgui/highgui.hpp>
@@ -14,27 +13,63 @@ edge_t edge_dfs( int init_x, int init_y, int x, int y, cv::Mat &im, const cv::Ma
   pixel init = { init_x, init_y, thickness.data[ init_y*thickness.step + init_x*thickness.elemSize() ] };
   e.push_back(init);
 
-  int dx[] = {  0,  1,  0, -1};
-  int dy[] = { -1,  0,  1,  0};
-  int dirs = 4;
+  // int dx[] = {  0,  1,  0, -1};
+  // int dy[] = { -1,  0,  1,  0};
+  // int dirs = 4;
+  int dx[] = {  0,  1,  1,  1,  0, -1, -1, -1};
+  int dy[] = { -1, -1,  0,  1,  1,  1,  0, -1};
+  int dirs = 8;
 
   while( true ){
-    pixel p = { x, y, thickness.data[ y*thickness.step + x*thickness.elemSize() ] };
+    pixel p = { x, y, thickness.at<uchar>(y,x) };
     e.push_back(p);
-    if( feature.data[ y*feature.step + x*feature.elemSize() ])
+    if( feature.at<uchar>(y,x) )
       break;
+    // next point ( feature point )
+    bool next = false;
     for( int i = 0 ; i < dirs; ++i ){
       int nx = x + dx[i];
       int ny = y + dy[i];
-      if( nx == init_x && ny == init_y )
+      if( init_x-1 <= nx && nx <= init_x+1 && 
+          init_y-1 <= ny && ny <= init_y+1 )
         continue;
-      if( im.data[ ny*im.step + nx*im.elemSize() ] ){
-        im.data[ y*im.step + x*im.elemSize() ] = 0;
+      if( nx < 0 || nx >= im.cols || ny < 0 || ny >= im.rows )
+        continue;
+      
+      if( im.at<uchar>(ny,nx) && feature.at<uchar>(ny,nx) ){
+        im.at<uchar>(y,x) = 0;
+        x = nx;
+        y = ny;
+        next = true;
+        break;
+      }
+    }
+
+    if( next ) 
+      continue;
+    // next point ( others )
+    for( int i = 0 ; i < dirs; ++i ){
+      int nx = x + dx[i];
+      int ny = y + dy[i];
+      if( init_x-1 <= nx && nx <= init_x+1 && 
+          init_y-1 <= ny && ny <= init_y+1 )
+        continue;
+      if( nx < 0 || nx >= im.cols || ny < 0 || ny >= im.rows )
+        continue;
+
+      if( im.at<uchar>(ny,nx) ){
+        im.at<uchar>(y,x) = 0;
         x = nx;
         y = ny;
         break;
       }
+   
     }
+    // cv::Mat temp = feature*64 | (im*32);
+    // temp.at<uchar>(y,x) = 255;
+    // cv::imshow("image", temp);
+    // cv::waitKey(1);
+
   }
   return e;
 }
@@ -52,10 +87,14 @@ void topology::create_topology( const skeleton &sk, bool inv ){
   cv::Mat feature = create_feature_map( im );
   edge.clear(); // create empty graph
   
-  int dx[] = {  0,  1,  0, -1};
-  int dy[] = { -1,  0,  1,  0};
-  int dirs = 4;
+  // int dx[] = {  0,  1,  0, -1};
+  // int dy[] = { -1,  0,  1,  0};
+  // int dirs = 4;
  
+  int dx[] = {  0,  1,  1,  1,  0, -1, -1, -1};
+  int dy[] = { -1, -1,  0,  1,  1,  1,  0, -1};
+  int dirs = 8;
+  
   int R = im.rows;
   int C = im.cols;
   // start DFS
@@ -65,6 +104,9 @@ void topology::create_topology( const skeleton &sk, bool inv ){
         for( int i = 0; i < dirs; ++i ){
           int nx = x + dx[i];
           int ny = y + dy[i];
+          if( nx < 0 || nx >= im.cols || ny < 0 || ny >= im.rows )
+            continue;
+
           if( im.data[ ny*im.step + nx*im.elemSize() ] ){
             edge_t e = edge_dfs( x, y, nx, ny, im, sk.thickness, feature ); // only update im
             edge.push_back(e);
@@ -117,8 +159,8 @@ cv::Mat topology::create_feature_map( const cv::Mat& im ){
           int py = y + dy[i];
           int nx = x + dx[nxt];
           int ny = y + dy[nxt];
-          if( 0 == im.data[ py*im.step + px*im.elemSize()] &&
-              0 != im.data[ ny*im.step + nx*im.elemSize()] )
+          if( 0 == ( py<0 || py>=R || px<0 || px>=C ? 0 : im.at<uchar>(py,px)) &&
+              0 != ( ny<0 || ny>=R || nx<0 || nx>=C ? 0 : im.at<uchar>(ny,nx) ))
             c += 1;
         }
         if( c==1 || c==3 || c==4 ){
