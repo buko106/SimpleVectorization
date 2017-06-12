@@ -1,6 +1,7 @@
 #include"utils.hpp"
 #include"thinning.hpp"
 #include"topology.hpp"
+#include"bezier.hpp"
 #include<iostream>
 #include<boost/program_options.hpp>
 #include<boost/filesystem.hpp>
@@ -83,5 +84,34 @@ int main( int argc, char* argv[] ){
   cv::imwrite((output/"thickness.png").generic_string(), 255-(sk.thickness * (255./maxVal)));
   topology tp(sk,false);
   
+
+  size_t N = tp.edge.size();
+  double w_max = -DBL_MAX;
+  for( size_t i = 0 ; i < N ; ++i ){
+    for( size_t j = 0 ; j < tp.edge[i].size() ; ++j ){
+      w_max = std::max<double>(w_max,tp.edge[i][j].w);
+    }
+  }
+
+  std::cout << "w_max=" << w_max << std::endl;
+  
+
+  fs::ofstream graph(output / "graph.svg");
+  //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
+  graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
+  for( size_t i = 0 ; i < N ; ++i ){
+    auto result = bezier_cubic_fitting( tp.edge[i], w_max );
+    auto curve = result.second;
+
+    graph << "\t<path d=\"" ;
+    for( size_t p = 0 ; p < curve.size() ; ++p ){
+      if( p == 0 ) graph << " M ";
+      if( p == 1 ) graph << " C ";
+      graph << " " << curve[p].first << " " << curve[p].second;
+    }
+    graph << "\" stroke=\"blue\" stroke-width=\"3\"  fill=\"none\" />\n" ;
+  }
+  graph <<  "</svg>" << std::endl;
+
   return 0;
 }
