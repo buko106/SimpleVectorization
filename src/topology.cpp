@@ -151,7 +151,8 @@ void topology::refine( double tolerance ){
   int    total_pixel = 0;
   std::priority_queue< std::pair<double,edge_t> > pq;
   for( size_t i = 0; i < edge.size(); ++i ){
-    auto result = bezier_cubic_fitting( edge[i], w_max );
+    std::pair<double,std::vector<std::pair<double,double> > >
+      result = bezier_cubic_fitting( edge[i], w_max );
     double err = result.first;
     total_error += err;
     total_pixel += static_cast<int>(edge[i].size());
@@ -159,7 +160,7 @@ void topology::refine( double tolerance ){
   }
 
   while( total_error/static_cast<double>(total_pixel) >= tolerance){
-    auto top = pq.top();
+    std::pair<double,edge_t> top = pq.top();
     double err = top.first;
     edge_t curve = top.second;
 
@@ -170,11 +171,13 @@ void topology::refine( double tolerance ){
     while( true ){
       int med = (left+right)/2;
       edge_t l_curve(curve.begin(),curve.begin()+med);
-      auto   l_result = bezier_cubic_fitting( l_curve, w_max );
+      std::pair<double,std::vector<std::pair<double,double> > >
+        l_result = bezier_cubic_fitting( l_curve, w_max );
       double l_err = l_result.first;
 
       edge_t r_curve(curve.begin()+(med-1),curve.end());
-      auto   r_result = bezier_cubic_fitting( r_curve, w_max );
+      std::pair<double,std::vector<std::pair<double,double> > >
+        r_result = bezier_cubic_fitting( r_curve, w_max );
       double r_err = r_result.first;
       
       if( l_err < r_err ) left  = med;
@@ -191,10 +194,11 @@ void topology::refine( double tolerance ){
   // finalize
   edge.resize(0);
   while( !pq.empty() ){
-    auto top = pq.top();
+    std::pair<double,edge_t> top = pq.top();
     pq.pop();
     edge.push_back(top.second);
   }
+  std::cerr << "[INFO] topology::refine : " << edge.size() << " curves in refined topology" << std::endl;
   return;
 }
 

@@ -1,5 +1,4 @@
 #include"bezier.hpp"
-#include<Eigen/Dense>
 #include<iostream>
 
 std::pair<double,std::vector<std::pair<double,double> > > 
@@ -64,18 +63,29 @@ bezier_cubic_fitting( const edge_t &edge, double w_max ){
     CY2 += weight * t2 * ( t0 * py0 + t3 * py3 - py );
   }
 
-  Eigen::Matrix2d A;
-  A  << (C11+0.000001), C12, C12, (C22+0.000001) ;
-  Eigen::Vector2d bx,by;
+  // Eigen::Matrix2d A;
+  // A  << (C11+0.000001), C12, C12, (C22+0.000001) ;
+  // Eigen::Vector2d bx,by;
+  // bx << -CX1, -CX2;
+  // by << -CY1, -CY2;
+  // Eigen::Vector2d x12,y12;
+  // x12 = A.fullPivLu().solve(bx);
+  // y12 = A.fullPivLu().solve(by);
+  // double px1 = x12(0); double py1 = y12(0);
+  // double px2 = x12(1); double py2 = y12(1);
+
+  cv::Mat_<double> A(2,2);
+  A << (C11+0.00001), C12, C12, (C22+0.00001);
+  cv::Mat_<double> bx(2,1),by(2,1),x12,y12;
   bx << -CX1, -CX2;
   by << -CY1, -CY2;
 
-  Eigen::Vector2d x12,y12;
-  x12 = A.fullPivLu().solve(bx);
-  y12 = A.fullPivLu().solve(by);
-  
-  double px1 = x12(0); double py1 = y12(0);
-  double px2 = x12(1); double py2 = y12(1);
+  cv::solve(A,bx,x12);
+  cv::solve(A,by,y12);
+
+  double px1 = x12(0,0); double py1 = y12(0,0);
+  double px2 = x12(1,0); double py2 = y12(1,0);
+
   
   double err = 0.0;
   

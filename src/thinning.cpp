@@ -164,7 +164,7 @@ void skeleton::TrappedBallThinning( int radius ){
     }
   }
   // information
-  std::cerr << "[INFO] TrappedBallThinning : " << region << " regions detected" << std::endl;
+  std::cerr << "[INFO] skeleton::TrappedBallThinning : " << region << " regions detected" << std::endl;
 
   // dilation
   bool update;
