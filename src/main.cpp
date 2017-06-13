@@ -86,8 +86,10 @@ int main( int argc, char* argv[] ){
   //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
   graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    auto result = bezier_cubic_fitting( tp.edge[i], w_max );
-    auto curve = result.second;
+    std::pair<double,std::vector<std::pair<double,double> > >
+      result = bezier_cubic_fitting( tp.edge[i], w_max );
+    std::vector<std::pair<double,double> >
+      curve = result.second;
 
     graph << "\t<path d=\"" ;
     for( size_t p = 0 ; p < curve.size() ; ++p ){
@@ -117,8 +119,10 @@ int main( int argc, char* argv[] ){
   //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
   graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    auto result = bezier_cubic_fitting( tp.edge[i], w_max );
-    auto curve = result.second;
+    std::pair<double,std::vector<std::pair<double,double> > >
+      result = bezier_cubic_fitting( tp.edge[i], w_max );
+    std::vector<std::pair<double,double> >
+      curve = result.second;
 
     graph << "\t<path d=\"" ;
     for( size_t p = 0 ; p < curve.size() ; ++p ){
