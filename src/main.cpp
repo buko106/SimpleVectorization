@@ -85,13 +85,10 @@ int main( int argc, char* argv[] ){
       result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_graph.push(curve);
+    svg_graph.push(curve[0].first,curve[0].second);
+    svg_graph.push(curve[curve.size()-1].first,curve[curve.size()-1].second);
   }
 
-  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    size_t n = tp.edge[i].size();
-    svg_graph.push(tp.edge[i][0].x,tp.edge[i][0].y);
-    svg_graph.push(tp.edge[i][n-1].x,tp.edge[i][n-1].y);
-  }
   graph << svg_graph << std::endl;
 
   graph.close();
@@ -107,13 +104,10 @@ int main( int argc, char* argv[] ){
       result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_refined.push(curve);
+    svg_refined.push(curve[0].first,curve[0].second);
+    svg_refined.push(curve[curve.size()-1].first,curve[curve.size()-1].second);
   }
 
-  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    size_t n = tp.edge[i].size();
-    svg_refined.push(tp.edge[i][0].x,tp.edge[i][0].y);
-    svg_refined.push(tp.edge[i][n-1].x,tp.edge[i][n-1].y);
-  }
   graph << svg_refined << std::endl;
   
   graph.close();

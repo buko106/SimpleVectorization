@@ -20,7 +20,7 @@ void svg::push( bezier curve, std::string color, int thickness ){
   return;
 }
 
-void svg::push( int cx, int cy, std::string color, int radius ){
+void svg::push( double cx, double cy, std::string color, int radius ){
   if( color == "" ) color = "red";
   svg_config config = std::make_pair(radius,color);
   circles.push_back(std::make_pair(std::make_pair(cx,cy),config));
