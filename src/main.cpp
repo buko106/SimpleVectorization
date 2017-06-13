@@ -82,7 +82,7 @@ int main( int argc, char* argv[] ){
   svg svg_graph(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
-      result = bezier_quadratic_fitting( tp.edge[i], tp.w_max );
+      result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_graph.push(curve);
   }
@@ -104,7 +104,7 @@ int main( int argc, char* argv[] ){
   svg svg_refined(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
-      result = bezier_quadratic_fitting( tp.edge[i], tp.w_max );
+      result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_refined.push(curve);
   }

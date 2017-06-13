@@ -18,17 +18,42 @@ bezier_fittting( const edge_t &edge, double w_max, BEZIER_DIM dim ){
 
 std::pair<double,std::vector<std::pair<double,double> > >
 bezier_line_fitting( const edge_t &edge, double w_max ){
-  exit(1);
+  size_t N = edge.size();
+
+  double px0 = edge[  0].x; double py0 = edge[  0].y;
+  double px1 = edge[N-1].x; double py1 = edge[N-1].y;
+  std::vector<double> wp(N);
+  for( size_t i = 0 ; i < N ; ++i ){
+    wp[i] = edge[i].w/w_max;
+  }
+
+  double err = 0.0;
+  for( size_t i = 0 ; i < N ; ++i ){
+    double t = static_cast<double>(i) / static_cast<double>(N);
+    double weight = 1.0 - wp[i]/2.0;
+    double t0 = (1.0-t) ;
+    double t1 =      t  ;
+    double px = edge[i].x;
+    double py = edge[i].y;
+    double diff_x = t0 * px0 + t1 * px1 - px;
+    double diff_y = t0 * py0 + t1 * py1 - py;
+    err += weight * ( diff_x * diff_x + diff_y * diff_y );
+  }
+  
+  std::vector<std::pair<double,double> > ret;
+  ret.push_back(std::make_pair(px0,py0));
+  ret.push_back(std::make_pair(px1,py1));
+  return std::make_pair(err,ret);
 }
 
 std::pair<double,std::vector<std::pair<double,double> > >
 bezier_quadratic_fitting( const edge_t &edge, double w_max ){
-  int N = edge.size();
+  size_t N = edge.size();
 
   double px0 = edge[  0].x; double py0 = edge[  0].y;
   double px2 = edge[N-1].x; double py2 = edge[N-1].y;
   std::vector<double> wp(N);
-  for( int i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < N ; ++i ){
     wp[i] = edge[i].w/w_max;
   }
 
@@ -36,7 +61,7 @@ bezier_quadratic_fitting( const edge_t &edge, double w_max ){
   double C  = 0.0;
   double CX = 0.0;
   double CY = 0.0;
-  for( int i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < N ; ++i ){
     double t = static_cast<double>(i) / static_cast<double>(N);
     double weight = 1.0 - wp[i]/2.0;
     double t0 = (1.0-t) * (1.0-t) ;
@@ -54,7 +79,7 @@ bezier_quadratic_fitting( const edge_t &edge, double w_max ){
 
   double err = 0.0;
 
-  for( int i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < N ; ++i ){
     double t = static_cast<double>(i) / static_cast<double>(N);
     double weight = 1.0 - wp[i]/2.0;
     double t0 = (1.0-t) * (1.0-t) ;
@@ -76,12 +101,12 @@ bezier_quadratic_fitting( const edge_t &edge, double w_max ){
 
 std::pair<double,std::vector<std::pair<double,double> > >
 bezier_cubic_fitting( const edge_t &edge, double w_max ){
-  int N = edge.size();
+  size_t N = edge.size();
   
   double px0 = edge[  0].x; double py0 = edge[  0].y;
   double px3 = edge[N-1].x; double py3 = edge[N-1].y;
   std::vector<double> wp(N);
-  for( int i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < N ; ++i ){
     wp[i] = edge[i].w/w_max;
   }
   
@@ -93,7 +118,7 @@ bezier_cubic_fitting( const edge_t &edge, double w_max ){
   double CX1 = 0.0; double CX2 = 0.0;
   double CY1 = 0.0; double CY2 = 0.0;
   
-  for( int i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < N ; ++i ){
     double t = static_cast<double>(i) / static_cast<double>(N);
     double weight = 1.0 - wp[i]/2.0;
     double t0 = (1.0-t) * (1.0-t) * (1.0-t);
@@ -137,7 +162,7 @@ bezier_cubic_fitting( const edge_t &edge, double w_max ){
   
   double err = 0.0;
   
-  for( int i = 0 ; i < N ; ++i ){
+  for( size_t i = 0 ; i < N ; ++i ){
     double t = static_cast<double>(i) / static_cast<double>(N);
     double weight = 1.0 - wp[i]/2.0;
     double t0 = (1.0-t) * (1.0-t) * (1.0-t);
