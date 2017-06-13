@@ -1,7 +1,7 @@
 #include"topology.hpp"
 #include"bezier.hpp"
 #include<iostream>
-#include <queue>
+#include<queue>
 
 // #include<opencv2/highgui/highgui.hpp>
 bool operator<( const pixel& a, const pixel& b){
@@ -102,11 +102,9 @@ void topology::create_topology( const skeleton &sk, bool inv ){
   int dy[] = { -1, -1,  0,  1,  1,  1,  0, -1};
   int dirs = 8;
   
-  int R = im.rows;
-  int C = im.cols;
   // start DFS
-  for( int y = 0 ; y < R ; ++y ){
-    for( int x = 0 ; x < C ; ++x ){
+  for( int y = 0 ; y < im.rows ; ++y ){
+    for( int x = 0 ; x < im.cols ; ++x ){
       if( feature.data[ y*feature.step + x*feature.elemSize() ] ){
         for( int i = 0; i < dirs; ++i ){
           int nx = x + dx[i];
