@@ -13,8 +13,8 @@ private:
   void TrappedBallOpening( int );
   void TrappedBallThinning( int );
 public: 
-  cv::Mat binary;
-  cv::Mat thickness;
-  skeleton( cv::Mat );
+  cv::Mat_<uchar> binary;
+  cv::Mat_<uchar> thickness;
+  skeleton( const cv::Mat_<uchar>& );
   void thinning( THINNING_METHOD = TRAPPEDBALL, bool = false, double = -1 );
 };

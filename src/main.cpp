@@ -57,10 +57,8 @@ int main( int argc, char* argv[] ){
     exit(1);
   }
 
-  fs::ofstream log(output / "log");
-
   // processing
-  cv::Mat binary = to_binary_image(im,15);
+  cv::Mat_<uchar> binary = to_binary_image(im,15);
 
   skeleton sk(binary);
 
@@ -114,7 +112,7 @@ int main( int argc, char* argv[] ){
   
   graph.close();
 
-  tp.refine(0.5);
+  tp.refine(0.2);
   graph.open(output / "refined.svg");
   //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
   graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
