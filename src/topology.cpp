@@ -148,21 +148,16 @@ void topology::refine( double tolerance ){
     }
   }
 
-  double total_error = 0.0;
-  int    total_pixel = 0;
   std::priority_queue< std::pair<double,edge_t> > pq;
   for( size_t i = 0; i < edge.size(); ++i ){
     std::pair<double,bezier>
       result = bezier_cubic_fitting( edge[i], w_max );
     double err = result.first;
-    total_error += err;
-    total_pixel += static_cast<int>(edge[i].size());
-    pq.push(make_pair(err,edge[i]));
+    pq.push(make_pair(err/static_cast<double>(edge.size()),edge[i]));
   }
 
-  while( total_error/static_cast<double>(total_pixel) >= tolerance){
+  while( pq.top().first >= tolerance){
     std::pair<double,edge_t> top = pq.top();
-    double err = top.first;
     edge_t curve = top.second;
 
     pq.pop();
@@ -185,9 +180,8 @@ void topology::refine( double tolerance ){
       else                right = med;
 
       if( left >= right-1 ){
-        pq.push(make_pair(l_err,l_curve));
-        pq.push(make_pair(r_err,r_curve));
-        total_error += l_err + r_err - err;
+        pq.push(make_pair(l_err/static_cast<double>(l_curve.size()),l_curve));
+        pq.push(make_pair(r_err/static_cast<double>(r_curve.size()),r_curve));
         break;
       }
     }
