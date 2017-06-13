@@ -128,7 +128,7 @@ void skeleton::ZhangSuenThinning(){
 }
 
 void skeleton::TrappedBallOpening( int radius ){
-  cv::Mat ball = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2*radius+1,2*radius+1));
+  cv::Mat_<uchar> ball = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(2*radius+1,2*radius+1));
   cv::morphologyEx(binary,
                    binary,
                    cv::MORPH_OPEN,

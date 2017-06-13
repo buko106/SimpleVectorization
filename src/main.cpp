@@ -15,7 +15,9 @@ po::options_description set_options(){
   opt.add_options()
     ("help,h"   ,                            "Show help")
     ("input,i"  , po::value<fs::path>(),  "Input image file")
-    ("output,o" , po::value<fs::path>(),  "Output directory");
+    ("output,o" , po::value<fs::path>(),  "Output directory")
+    ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
+    ("tolerance,t", po::value<double>()->default_value(2.), "tolarable average fitting error");
   return opt;
 }
 
@@ -44,7 +46,7 @@ int main( int argc, char* argv[] ){
     std::cerr << "[ERROR] No such file " << input <<std::endl;
     exit(1);
   }
-  cv::Mat im = imread_as_grayscale(input.generic_string(),true);
+  cv::Mat_<uchar> im = imread_as_grayscale(input.generic_string(),true);
   if( im.empty() ){
     std::cerr << "[ERROR] Unable to read image " << input << std::endl;
     exit(1);
@@ -62,7 +64,7 @@ int main( int argc, char* argv[] ){
 
   skeleton sk(binary);
 
-  double radius = 3;
+  double radius = argmap["radius"].as<int>();
   sk.thinning(TRAPPEDBALL,false,radius);
   
   double maxVal;
@@ -73,7 +75,7 @@ int main( int argc, char* argv[] ){
   cv::imwrite((output/"thickness.png").generic_string(), 255-(sk.thickness * (255./maxVal)));
   topology tp(sk,false);
 
-  double w_max = -DBL_MAX;
+  double w_max = -std::numeric_limits<double>::max();
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     for( size_t j = 0 ; j < tp.edge[i].size() ; ++j ){
       w_max = std::max<double>(w_max,tp.edge[i][j].w);
@@ -112,7 +114,8 @@ int main( int argc, char* argv[] ){
   
   graph.close();
 
-  tp.refine(0.2);
+  double tolerance = argmap["tolerance"].as<double>();
+  tp.refine(tolerance);
   graph.open(output / "refined.svg");
   //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
   graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;

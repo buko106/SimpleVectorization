@@ -13,7 +13,8 @@ topology::topology( const skeleton &sk, bool inv ){
   return;
 }
 
-edge_t edge_dfs( int init_x, int init_y, int x, int y, cv::Mat &im, const cv::Mat &thickness, const cv::Mat &feature ){
+edge_t edge_dfs( int init_x, int init_y, int x, int y,
+                 cv::Mat_<uchar> &im, const cv::Mat_<uchar> &thickness, const cv::Mat_<uchar> &feature ){
   // only update im
   edge_t e;
   pixel init = { init_x, init_y, thickness.data[ init_y*thickness.step + init_x*thickness.elemSize() ] };
@@ -82,7 +83,7 @@ edge_t edge_dfs( int init_x, int init_y, int x, int y, cv::Mat &im, const cv::Ma
 
 
 void topology::create_topology( const skeleton &sk, bool inv ){
-  cv::Mat im(sk.binary.clone());
+  cv::Mat_<uchar> im(sk.binary.clone());
   // convert to 0/1 Matrix
   if( inv ){
     im = (255-im)/255;
@@ -90,7 +91,7 @@ void topology::create_topology( const skeleton &sk, bool inv ){
     im = im/255;
   }
   
-  cv::Mat feature = create_feature_map( im );
+  cv::Mat_<uchar> feature = create_feature_map( im );
   edge.clear(); // create empty graph
   
   // int dx[] = {  0,  1,  0, -1};
@@ -124,8 +125,8 @@ void topology::create_topology( const skeleton &sk, bool inv ){
   // TODO: Detect circuit
   std::cerr << "[WARNING] create_topology : Simple circuit may not be detected( impletemnted in the future )" << std::endl;
 
-  int max = -100000;
-  int min =  100000;
+  int max = std::numeric_limits<int>::min();
+  int min = std::numeric_limits<int>::max();
   for( size_t i = 0 ; i < edge.size() ; ++i ){
     for( size_t j = 0 ; j < edge[i].size(); ++j ){
       max = std::max(max,edge[i][j].w);
@@ -141,7 +142,7 @@ void topology::create_topology( const skeleton &sk, bool inv ){
 }
 
 void topology::refine( double tolerance ){
-  double w_max = -DBL_MAX;
+  double w_max = -std::numeric_limits<double>::max();
   for( size_t i = 0 ; i < edge.size() ; ++i ){
     for( size_t j = 0 ; j < edge[i].size() ; ++j ){
       w_max = std::max<double>(w_max,edge[i][j].w);
@@ -199,9 +200,9 @@ void topology::refine( double tolerance ){
   return;
 }
 
-cv::Mat topology::create_feature_map( const cv::Mat& im ){
+cv::Mat_<uchar> topology::create_feature_map( const cv::Mat_<uchar>& im ){
   
-  cv::Mat feature = cv::Mat::zeros(im.size(),CV_8UC1);
+  cv::Mat_<uchar> feature = cv::Mat_<uchar>::zeros(im.size());
 
   int dx[] = {  0,  1,  1,  1,  0, -1, -1, -1};
   int dy[] = { -1, -1,  0,  1,  1,  1,  0, -1};
@@ -212,7 +213,7 @@ cv::Mat topology::create_feature_map( const cv::Mat& im ){
 
   for( int y = 0 ; y < R ; ++y ){
     for( int x = 0 ; x < C ; ++x ){
-      if( 0 != im.data[ y*im.step + x*im.elemSize()] ){
+      if( 0 != im(y,x) ){
         int c=0;
         for( int i = 0 ; i < dirs ; ++i ){
           int nxt = (i+1)%dirs;
@@ -220,12 +221,12 @@ cv::Mat topology::create_feature_map( const cv::Mat& im ){
           int py = y + dy[i];
           int nx = x + dx[nxt];
           int ny = y + dy[nxt];
-          if( 0 == ( py<0 || py>=R || px<0 || px>=C ? 0 : im.at<uchar>(py,px)) &&
-              0 != ( ny<0 || ny>=R || nx<0 || nx>=C ? 0 : im.at<uchar>(ny,nx) ))
+          if( 0 == ( py<0 || py>=R || px<0 || px>=C ? 0 : im(py,px)) &&
+              0 != ( ny<0 || ny>=R || nx<0 || nx>=C ? 0 : im(ny,nx) ))
             c += 1;
         }
         if( c==1 || c==3 || c==4 ){
-          feature.data[ y*feature.step + x*feature.elemSize() ] = 1;
+          feature(y,x) = 1;
         }
       }
     }
