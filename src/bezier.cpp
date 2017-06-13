@@ -23,7 +23,55 @@ bezier_line_fitting( const edge_t &edge, double w_max ){
 
 std::pair<double,std::vector<std::pair<double,double> > >
 bezier_quadratic_fitting( const edge_t &edge, double w_max ){
-  exit(1);
+  int N = edge.size();
+
+  double px0 = edge[  0].x; double py0 = edge[  0].y;
+  double px2 = edge[N-1].x; double py2 = edge[N-1].y;
+  std::vector<double> wp(N);
+  for( int i = 0 ; i < N ; ++i ){
+    wp[i] = edge[i].w/w_max;
+  }
+
+  // generate equation
+  double C  = 0.0;
+  double CX = 0.0;
+  double CY = 0.0;
+  for( int i = 0 ; i < N ; ++i ){
+    double t = static_cast<double>(i) / static_cast<double>(N);
+    double weight = 1.0 - wp[i]/2.0;
+    double t0 = (1.0-t) * (1.0-t) ;
+    double t1 =      t  * (1.0-t) ;
+    double t2 =      t  *      t  ;
+    double px = edge[i].x;
+    double py = edge[i].y;
+    C  += weight * t1 * 2 * t1;
+    CX += weight * t1 * ( t0 * px0 + t2 * px2 - px );
+    CY += weight * t1 * ( t0 * py0 + t2 * py2 - py );
+  }
+
+  double px1 = -CX/C;
+  double py1 = -CY/C;
+
+  double err = 0.0;
+
+  for( int i = 0 ; i < N ; ++i ){
+    double t = static_cast<double>(i) / static_cast<double>(N);
+    double weight = 1.0 - wp[i]/2.0;
+    double t0 = (1.0-t) * (1.0-t) ;
+    double t1 =      t  * (1.0-t) ;
+    double t2 =      t  *      t  ;
+    double px = edge[i].x;
+    double py = edge[i].y;
+    double diff_x = t0 * px0 + 2 * t1 * px1 + t2 * px2 - px;
+    double diff_y = t0 * py0 + 2 * t1 * py1 + t2 * py2 - py;
+    err += weight * ( diff_x * diff_x + diff_y * diff_y );
+  }
+  
+  std::vector<std::pair<double,double> > ret;
+  ret.push_back(std::make_pair(px0,py0));
+  ret.push_back(std::make_pair(px1,py1));
+  ret.push_back(std::make_pair(px2,py2));
+  return std::make_pair(err,ret);
 }
 
 std::pair<double,std::vector<std::pair<double,double> > >

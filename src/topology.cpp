@@ -131,7 +131,8 @@ void topology::create_topology( const skeleton &sk, bool inv ){
       min = std::min(min,edge[i][j].w);
     }
   }
-  
+
+  w_max = static_cast<double>(max);
   std::cerr << "[INFO] create_topology : " << edge.size() << " edges detected" << std::endl;
   std::cerr << "[INFO] create_topology : max thickness = " << max << ", min thickness = " << min << std::endl;
   

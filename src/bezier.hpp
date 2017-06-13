@@ -8,7 +8,9 @@ enum BEZIER_DIM{
   CUBIC = 3
 };
 
-std::pair<double,std::vector<std::pair<double,double> > > bezier_line_fitting( const edge_t& , double );
-std::pair<double,std::vector<std::pair<double,double> > > bezier_quadratic_fitting( const edge_t& , double );
-std::pair<double,std::vector<std::pair<double,double> > > bezier_cubic_fitting( const edge_t& , double );
-std::pair<double,std::vector<std::pair<double,double> > > bezier_fittting( const edge_t& , double, BEZIER_DIM );
+typedef std::vector<std::pair<double,double> > bezier;
+
+std::pair<double,bezier> bezier_line_fitting( const edge_t& , double );
+std::pair<double,bezier> bezier_quadratic_fitting( const edge_t& , double );
+std::pair<double,bezier> bezier_cubic_fitting( const edge_t& , double );
+std::pair<double,bezier> bezier_fittting( const edge_t& , double, BEZIER_DIM );

@@ -2,6 +2,7 @@
 #include"thinning.hpp"
 #include"topology.hpp"
 #include"bezier.hpp"
+#include"svg.hpp"
 #include<iostream>
 #include<boost/program_options.hpp>
 #include<boost/filesystem.hpp>
@@ -17,7 +18,7 @@ po::options_description set_options(){
     ("input,i"  , po::value<fs::path>(),  "Input image file")
     ("output,o" , po::value<fs::path>(),  "Output directory")
     ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
-    ("tolerance,t", po::value<double>()->default_value(2.), "tolarable average fitting error");
+    ("tolerance,t", po::value<double>()->default_value(1.), "tolarable average fitting error");
   return opt;
 }
 
@@ -75,76 +76,45 @@ int main( int argc, char* argv[] ){
   cv::imwrite((output/"thickness.png").generic_string(), 255-(sk.thickness * (255./maxVal)));
   topology tp(sk,false);
 
-  double w_max = -std::numeric_limits<double>::max();
-  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    for( size_t j = 0 ; j < tp.edge[i].size() ; ++j ){
-      w_max = std::max<double>(w_max,tp.edge[i][j].w);
-    }
-  }
 
   fs::ofstream graph(output / "graph.svg");
-  //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
-  graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
-  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    std::pair<double,std::vector<std::pair<double,double> > >
-      result = bezier_cubic_fitting( tp.edge[i], w_max );
-    std::vector<std::pair<double,double> >
-      curve = result.second;
 
-    graph << "\t<path d=\"" ;
-    for( size_t p = 0 ; p < curve.size() ; ++p ){
-      if( p == 0 ) graph << " M ";
-      if( p == 1 ) graph << " C ";
-      graph << " " << curve[p].first << " " << curve[p].second;
-    }
-    graph << "\" stroke=\"blue\" stroke-width=\"3\"  fill=\"none\" />\n" ;
+  svg svg_graph(0,0,im.cols,im.rows);
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
+    std::pair<double,bezier>
+      result = bezier_quadratic_fitting( tp.edge[i], tp.w_max );
+    bezier curve = result.second;
+    svg_graph.push(curve);
   }
 
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    graph << "\t<circle cx=\"" << tp.edge[i][0].x 
-          << "\" cy=\"" << tp.edge[i][0].y 
-          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
-    graph << "\t<circle cx=\"" << tp.edge[i][tp.edge[i].size()-1].x 
-          << "\" cy=\"" << tp.edge[i][tp.edge[i].size()-1].y 
-          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
+    size_t n = tp.edge[i].size();
+    svg_graph.push(tp.edge[i][0].x,tp.edge[i][0].y);
+    svg_graph.push(tp.edge[i][n-1].x,tp.edge[i][n-1].y);
   }
-  graph <<  "</svg>" << std::endl;
+  graph << svg_graph << std::endl;
 
-  std::cout << "w_max=" << w_max << std::endl;
-  
   graph.close();
 
   double tolerance = argmap["tolerance"].as<double>();
   tp.refine(tolerance);
   graph.open(output / "refined.svg");
-  //   <path d="C 125 5E+1 175 50 200 0" stroke="blue" stroke-width="3"  fill="none" />
-  graph << "<svg viewBox=\"0 0 " << im.cols << " " << im.rows << "\">" << std::endl;
-  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    std::pair<double,std::vector<std::pair<double,double> > >
-      result = bezier_cubic_fitting( tp.edge[i], w_max );
-    std::vector<std::pair<double,double> >
-      curve = result.second;
 
-    graph << "\t<path d=\"" ;
-    for( size_t p = 0 ; p < curve.size() ; ++p ){
-      if( p == 0 ) graph << " M ";
-      if( p == 1 ) graph << " C ";
-      graph << " " << curve[p].first << " " << curve[p].second;
-    }
-    graph << "\" stroke=\"blue\" stroke-width=\"3\"  fill=\"none\" />\n" ;
+
+  svg svg_refined(0,0,im.cols,im.rows);
+  for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
+    std::pair<double,bezier>
+      result = bezier_quadratic_fitting( tp.edge[i], tp.w_max );
+    bezier curve = result.second;
+    svg_refined.push(curve);
   }
 
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
-    graph << "\t<circle cx=\"" << tp.edge[i][0].x 
-          << "\" cy=\"" << tp.edge[i][0].y 
-          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
-    graph << "\t<circle cx=\"" << tp.edge[i][tp.edge[i].size()-1].x 
-          << "\" cy=\"" << tp.edge[i][tp.edge[i].size()-1].y 
-          << "\" r=\"3\" stroke=\"none\" fill=\"red\"/>\n";
+    size_t n = tp.edge[i].size();
+    svg_refined.push(tp.edge[i][0].x,tp.edge[i][0].y);
+    svg_refined.push(tp.edge[i][n-1].x,tp.edge[i][n-1].y);
   }
-  graph <<  "</svg>" << std::endl;
-
-  std::cout << "w_max=" << w_max << std::endl;
+  graph << svg_refined << std::endl;
   
   graph.close();
 
