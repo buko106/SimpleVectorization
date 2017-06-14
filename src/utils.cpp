@@ -1,4 +1,5 @@
 #include"utils.hpp"
+#include<random>
 
 cv::Mat_<uchar> imread_as_grayscale( std::string filename , bool inv ){
   int flag = 0; // 0 for grayscale, 1 for color
@@ -20,4 +21,17 @@ cv::Mat_<uchar> to_binary_image( cv::Mat gray, double thresh ){
   }
   
   return dst;
+}
+
+std::random_device rd;
+std::mt19937 mt(rd());
+
+int random_generate_int( int a, int b ){
+  std::uniform_int_distribution<int> uniform_int(a,b);
+  return uniform_int(mt);
+}
+
+double random_generate_uniform( double a, double b ){
+  std::uniform_real_distribution<double> uniform_double(a,b);
+  return uniform_double(mt);
 }

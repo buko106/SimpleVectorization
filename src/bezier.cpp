@@ -2,16 +2,16 @@
 #include<iostream>
 
 std::pair<double,bezier>
-bezier_fittting( const edge_t &edge, double w_max, BEZIER_DIM dim ){
-  if( dim == LINE ){
+bezier_fittting( const edge_t &edge, double w_max, BEZIER_DEG deg ){
+  if( deg == LINE ){
     return bezier_line_fitting( edge, w_max );
-  }else if( dim == QUAD ){
+  }else if( deg == QUAD ){
     return bezier_quadratic_fitting( edge, w_max );
-  }else if( dim == CUBIC ){
+  }else if( deg == CUBIC ){
     return bezier_cubic_fitting( edge, w_max );
   }
   
-  std::cerr << "[ERROR] bezier_fitting : dim = " << dim << " is not supported" << std::endl;
+  std::cerr << "[ERROR] bezier_fitting : dim = " << deg << " is not supported" << std::endl;
   exit(1);
 }
 

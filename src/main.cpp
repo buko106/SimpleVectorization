@@ -3,6 +3,7 @@
 #include"topology.hpp"
 #include"bezier.hpp"
 #include"svg.hpp"
+#include"hypergraph.hpp"
 #include<iostream>
 #include<boost/program_options.hpp>
 #include<boost/filesystem.hpp>
@@ -18,7 +19,9 @@ po::options_description set_options(){
     ("input,i"  , po::value<fs::path>(),  "Input image file")
     ("output,o" , po::value<fs::path>(),  "Output directory")
     ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
-    ("tolerance,t", po::value<double>()->default_value(1.), "tolarable average fitting error");
+    ("tolerance,t", po::value<double>()->default_value(1.), "Tolarable average fitting error")
+    ("mu,m" , po::value<double>()->default_value(2.0), "Balance parameter for degree of bezier curves. High value means less dgree")
+    ("lambda,l" , po::value<double>()->default_value(0.5), "Balance parameter for fidelity and simplicity. Must be in range [0,1]");
   return opt;
 }
 
@@ -34,12 +37,15 @@ int main( int argc, char* argv[] ){
     exit(1);
   }
   notify(argmap);
+
+  double lambda = argmap["lambda"].as<double>();
+  double mu = argmap["mu"].as<double>();
   // show help
-  if( argmap.count("help") || !argmap.count("input") || !argmap.count("output") ){
+  if( argmap.count("help") || !argmap.count("input") || !argmap.count("output")
+      || lambda < 0.0 || lambda > 1.0 ){
     std::cerr << opt << std::endl;
     exit(1);
   }
-
   // error handling of file I/O
   fs::path input = argmap["input"].as<fs::path>();
   fs::path output = argmap["output"].as<fs::path>();
@@ -57,6 +63,13 @@ int main( int argc, char* argv[] ){
     std::cerr<< "[WARNING] Directory " << output << " already exists" << std::endl;
   }else if( !fs::create_directories(output) ){
     std::cerr<< "[ERROR] Unable to create directory "<< output <<std::endl;
+    exit(1);
+  }
+
+  if( fs::exists(output/"iter") ){
+    std::cerr<< "[WARNING] Directory " << output/"iter" << " already exists" << std::endl;
+  }else if( !fs::create_directories(output/"iter") ){
+    std::cerr<< "[ERROR] Unable to create directory "<< output/"iter" <<std::endl;
     exit(1);
   }
 
@@ -82,7 +95,7 @@ int main( int argc, char* argv[] ){
   svg svg_graph(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
-      result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
+      result = bezier_line_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_graph.push(curve);
     svg_graph.push(curve[0].first,curve[0].second);
@@ -101,7 +114,7 @@ int main( int argc, char* argv[] ){
   svg svg_refined(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
-      result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
+      result = bezier_line_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_refined.push(curve);
     svg_refined.push(curve[0].first,curve[0].second);
@@ -112,5 +125,31 @@ int main( int argc, char* argv[] ){
   
   graph.close();
 
+
+  hypergraph hyper( tp, LINE );
+  int iter = 100000;
+  int num  =   1000;
+  fs::ofstream log(output/"log");
+
+  for( int i = 0 ; i < iter ; ++i ){
+    double U = hyper.step( lambda, mu );
+    if( i%num == num-1 ){
+      // output graph
+      graph.open(output /"iter"/("iter"+std::to_string(i+1)+".svg"));
+      svg svg_iter(0,0,im.cols,im.rows);
+      log << i+1 << " " << U <<std::endl;
+
+      std::vector< std::pair<edge_t,BEZIER_DEG> >
+        curve = hyper.to_bezier();
+      for( size_t c = 0 ; c < curve.size() ; ++c ){
+        std::pair<double,bezier> res = bezier_fittting( curve[c].first, tp.w_max, curve[c].second );
+        svg_iter.push(res.second);
+        svg_iter.push(res.second[0].first,res.second[0].second);
+        svg_iter.push(res.second[res.second.size()-1].first,res.second[res.second.size()-1].second);
+      }
+      graph << svg_iter << std::endl;
+      graph.close();
+    }
+  }
   return 0;
 }

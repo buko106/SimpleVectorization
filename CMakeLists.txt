@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_CXX_COMPILER g++-5)
-set(CMAKE_CXX_FLAGS "-std=c++14 -O0 -g -Wall -Wextra -Wconversion")
+set(CMAKE_CXX_FLAGS "-std=c++11 -O0 -g -Wall -Wextra -Wconversion")
 
 project(SimpleVectorization CXX)
 

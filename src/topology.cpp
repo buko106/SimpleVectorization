@@ -28,9 +28,9 @@ edge_t edge_dfs( int init_x, int init_y, int x, int y,
   int dirs = 8;
 
   while( true ){
-    pixel p = { x, y, thickness.at<uchar>(y,x) };
+    pixel p = { x, y, thickness(y,x) };
     e.push_back(p);
-    if( feature.at<uchar>(y,x) )
+    if( feature(y,x) )
       break;
     // next point ( feature point )
     bool next = false;
@@ -43,8 +43,8 @@ edge_t edge_dfs( int init_x, int init_y, int x, int y,
       if( nx < 0 || nx >= im.cols || ny < 0 || ny >= im.rows )
         continue;
       
-      if( im.at<uchar>(ny,nx) && feature.at<uchar>(ny,nx) ){
-        im.at<uchar>(y,x) = 0;
+      if( im(ny,nx) && feature(ny,nx) ){
+        im(y,x) = 0;
         x = nx;
         y = ny;
         next = true;
@@ -64,8 +64,8 @@ edge_t edge_dfs( int init_x, int init_y, int x, int y,
       if( nx < 0 || nx >= im.cols || ny < 0 || ny >= im.rows )
         continue;
 
-      if( im.at<uchar>(ny,nx) ){
-        im.at<uchar>(y,x) = 0;
+      if( im(ny,nx) ){
+        im(y,x) = 0;
         x = nx;
         y = ny;
         break;
@@ -141,17 +141,11 @@ void topology::create_topology( const skeleton &sk, bool inv ){
 }
 
 void topology::refine( double tolerance ){
-  double w_max = -std::numeric_limits<double>::max();
-  for( size_t i = 0 ; i < edge.size() ; ++i ){
-    for( size_t j = 0 ; j < edge[i].size() ; ++j ){
-      w_max = std::max<double>(w_max,edge[i][j].w);
-    }
-  }
 
   std::priority_queue< std::pair<double,edge_t> > pq;
   for( size_t i = 0; i < edge.size(); ++i ){
     std::pair<double,bezier>
-      result = bezier_cubic_fitting( edge[i], w_max );
+      result = bezier_line_fitting( edge[i], w_max );
     double err = result.first;
     pq.push(make_pair(err/static_cast<double>(edge.size()),edge[i]));
   }
@@ -168,12 +162,12 @@ void topology::refine( double tolerance ){
       int med = (left+right)/2;
       edge_t l_curve(curve.begin(),curve.begin()+med);
       std::pair<double,bezier>
-        l_result = bezier_cubic_fitting( l_curve, w_max );
+        l_result = bezier_line_fitting( l_curve, w_max );
       double l_err = l_result.first;
 
       edge_t r_curve(curve.begin()+(med-1),curve.end());
       std::pair<double,bezier>
-        r_result = bezier_cubic_fitting( r_curve, w_max );
+        r_result = bezier_line_fitting( r_curve, w_max );
       double r_err = r_result.first;
       
       if( l_err < r_err ) left  = med;
