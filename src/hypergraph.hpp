@@ -8,6 +8,7 @@ public:
   double error;
   BEZIER_DEG deg;
   std::vector< std::pair<size_t,bool> > e;
+  pixel ends[2];
 };
 
 

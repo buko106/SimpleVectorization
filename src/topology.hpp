@@ -10,6 +10,7 @@ public:
 };
 
 bool operator<( const pixel&, const pixel& );
+bool operator==( const pixel&, const pixel& );
 typedef std::vector<pixel> edge_t;
 
 class topology{

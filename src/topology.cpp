@@ -7,6 +7,9 @@
 bool operator<( const pixel& a, const pixel& b){
   return ( a.x<b.x ? true : ( a.y<b.y ? true : a.w < b.w ));
 }
+bool operator==( const pixel& a, const pixel& b){
+  return a.x==b.x && a.y==b.y && a.w==b.w ;
+}
 
 topology::topology( const skeleton &sk, bool inv ){
   create_topology( sk, inv );
