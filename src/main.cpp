@@ -133,11 +133,11 @@ int main( int argc, char* argv[] ){
 
   for( int i = 0 ; i < iter ; ++i ){
     double U = hyper.step( lambda, mu );
+    log << i+1 << " " << U <<std::endl;
     if( i%num == num-1 ){
       // output graph
       graph.open(output /"iter"/("iter"+std::to_string(i+1)+".svg"));
       svg svg_iter(0,0,im.cols,im.rows);
-      log << i+1 << " " << U <<std::endl;
 
       std::vector< std::pair<edge_t,BEZIER_DEG> >
         curve = hyper.to_bezier();
