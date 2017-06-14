@@ -35,7 +35,7 @@ void hypergraph::init( topology tp, BEZIER_DEG deg ){
 double hypergraph::step( double lambda, double mu, size_t iteration , double C ){
   // automatic calc of C  
   if( C <= 0.0 ){
-    C = std::pow( 0.999, 1.0/static_cast<double>(V.size()) );
+    C = std::pow( 0.999, 0.1/static_cast<double>(V.size()) );
   }
   // iteration
   for( size_t iteration_counter = 0 ; iteration_counter < iteration ; ++iteration_counter ){
@@ -83,6 +83,7 @@ double hypergraph::step( double lambda, double mu, size_t iteration , double C )
         }
 
         edge_t tmp = to_edge_t( new_hyper_edge );
+        // fit bezier curves and calculate diff = U(x)-U(x')
         std::pair<double,bezier> result = bezier_fittting( tmp, w_max, new_deg );
         double dUf =  h[selected].error + h[target.first].error - result.first;
         double dUs =  (2.0 - 1.0) + mu * static_cast<double>( h[selected].deg + h[target.first].deg - new_deg );
@@ -100,13 +101,50 @@ double hypergraph::step( double lambda, double mu, size_t iteration , double C )
         } // else update x <- x
         break;
       }else if( op < 0.666 ){ // split
-        
+        if( h[selected].e.size() <= 1 ) continue;
+        int split_pos = random_generate_int(0,static_cast<int>(h[selected].e.size()-2));
+        hyperedge new_hyper_edge[2];
+        BEZIER_DEG new_deg = h[selected].deg;
+        new_hyper_edge[0].e.insert(new_hyper_edge[0].e.end(),
+                                   h[selected].e.begin(),
+                                   h[selected].e.begin()+(split_pos+1));
+        new_hyper_edge[1].e.insert(new_hyper_edge[1].e.end(),
+                                   h[selected].e.begin()+(split_pos+1),
+                                   h[selected].e.end());
+        // fit bezier curves and calculate diff = U(x)-U(x')
+        std::pair<double,bezier> result[2];
+        for( int i = 0 ; i < 2 ; ++i ){
+          edge_t new_edge;
+          new_edge = to_edge_t( new_hyper_edge[i] );
+          result[i] = bezier_fittting( new_edge, w_max, new_deg );
+        }
+        double dUf =  h[selected].error - result[0].first - result[1].first ;
+        double dUs =  (1.0 - 2.0 ) + mu * static_cast<double>( h[selected].deg - 2 * new_deg );
+        double diff = ( 1.0 - lambda ) * dUf + lambda * dUs ;
+        // draw a random value p \in [0,1]
+        double p = random_generate_uniform(0,1);
+        if( p < std::exp(diff/T) ){
+          // update x <- x'
+          for( int i = 0 ; i < 2 ; ++i ){
+            new_hyper_edge[i].error = result[i].first;
+            new_hyper_edge[i].deg = new_deg;
+          }
+          new_hyper_edge[0].ends[0] = h[selected].ends[0];
+          new_hyper_edge[1].ends[1] = h[selected].ends[1];
+          new_hyper_edge[0].ends[1] = edge[h[selected].e[split_pos+1].first][0];
+          new_hyper_edge[1].ends[0] = edge[h[selected].e[split_pos+1].first][0];
+          h.erase(h.begin()+selected);
+          for( int i = 0 ; i < 2 ; ++i ){
+            h.push_back(new_hyper_edge[i]);
+          }
+        } // else update x <- x
         break;
       }else{ // degree switch
         BEZIER_DEG new_deg;
         while( h[selected].deg == (new_deg=static_cast<BEZIER_DEG>(random_generate_int(LINE,CUBIC)) ) )
           { ; }
         edge_t new_edge = to_edge_t( h[selected] );
+        // fit bezier curves and calculate diff = U(x)-U(x')
         std::pair<double,bezier> result = bezier_fittting( new_edge, w_max, new_deg );
         double dUf =  h[selected].error - result.first;
         double dUs =  mu * static_cast<double>( h[selected].deg - new_deg );
@@ -121,15 +159,7 @@ double hypergraph::step( double lambda, double mu, size_t iteration , double C )
         break;
       }
     }
-    // fit bezier curves and calculate diff = U(x)-U(x')
     
-    // draw a random value p \in [0,1]
-    double p = random_generate_uniform(0,1);
-    
-    // if( p < std::exp(diff/T) ){
-    //   // update x <- x'
-    // } // else update x <- x
-
     T *= C;
   }
   // calculation of U(x)

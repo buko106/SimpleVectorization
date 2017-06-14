@@ -21,7 +21,7 @@ po::options_description set_options(){
     ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
     ("tolerance,t", po::value<double>()->default_value(1.), "Tolarable average fitting error")
     ("mu,m" , po::value<double>()->default_value(2.0), "Balance parameter for degree of bezier curves. High value means less dgree")
-    ("lambda,l" , po::value<double>()->default_value(0.5), "Balance parameter for fidelity and simplicity. Must be in range [0,1]");
+    ("lambda,l" , po::value<double>()->default_value(0.5), "Balance parameter for fidelity and simplicity. Must be in range [0,1]. High value means high simplicity");
   return opt;
 }
 
@@ -95,7 +95,7 @@ int main( int argc, char* argv[] ){
   svg svg_graph(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
-      result = bezier_line_fitting( tp.edge[i], tp.w_max );
+      result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_graph.push(curve);
     svg_graph.push(curve[0].first,curve[0].second);
@@ -114,7 +114,7 @@ int main( int argc, char* argv[] ){
   svg svg_refined(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
-      result = bezier_line_fitting( tp.edge[i], tp.w_max );
+      result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
     svg_refined.push(curve);
     svg_refined.push(curve[0].first,curve[0].second);
@@ -125,6 +125,10 @@ int main( int argc, char* argv[] ){
   
   graph.close();
 
+  // iter/iter0.svg
+  graph.open(output /"iter"/"iter0.svg");
+  graph << svg_refined << std::endl;  
+  graph.close();
 
   hypergraph hyper( tp, LINE );
   int iter = 100000;
