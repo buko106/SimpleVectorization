@@ -19,33 +19,98 @@ bezier_fittting( const edge_t &edge, double w_max, BEZIER_DIM dim ){
 std::pair<double,bezier>
 bezier_line_fitting( const edge_t &edge, double w_max ){
   size_t N = edge.size();
+  if( N < 2 ){
+    // few points to solve equation
+    std::vector<std::pair<double,double> > ret;
+    ret.push_back(std::make_pair<double,double>(edge[0].x,edge[0].y));
+    ret.push_back(std::make_pair<double,double>(edge[N-1].x,edge[N-1].y));
+    return std::make_pair(0.0,ret);
+  }
 
-  double px0 = edge[  0].x; double py0 = edge[  0].y;
-  double px1 = edge[N-1].x; double py1 = edge[N-1].y;
   std::vector<double> wp(N);
   for( size_t i = 0 ; i < N ; ++i ){
     wp[i] = edge[i].w/w_max;
   }
+  
+  // generate equation
+  double CX[2] = {};
+  double CY[2] = {};
+  double C[2][2] = {};
 
-  double err = 0.0;
   for( size_t i = 0 ; i < N ; ++i ){
-    double t = static_cast<double>(i) / static_cast<double>(N-1);
+    double tp = static_cast<double>(i) / static_cast<double>(N-1);
     double weight = 1.0 - wp[i]/2.0;
-    double t0 = (1.0-t) ;
-    double t1 =      t  ;
     double px = edge[i].x;
     double py = edge[i].y;
-    double diff_x = t0 * px0 + t1 * px1 - px;
-    double diff_y = t0 * py0 + t1 * py1 - py;
-    err += weight * ( diff_x * diff_x + diff_y * diff_y );
+    
+    double t[2];
+    for( int j = 0 ; j < 2 ; ++j ){
+      t[j] = 1.0;
+      for( int k = 0 ; k <    j  ; ++k )
+        t[j] *=   tp;
+      for( int k = 0 ; k < (1-j) ; ++k )
+        t[j] *= 1-tp;
+    }
+    
+    for( int j = 0 ; j < 2 ; ++j ){
+      CX[j] += weight * t[j] * px;
+      CY[j] += weight * t[j] * py;
+      for( int k = 0 ; k < 2 ; ++k ){
+        C[j][k] += weight * t[j] * t[k];
+      }
+    }
+  }
+
+  cv::Mat_<double> A(2,2);
+  cv::Mat_<double> bx(2,1),by(2,1),x,y;
+  for( int i = 0 ; i < 2 ; ++i ){
+    bx(i,0) = CX[i];
+    by(i,0) = CY[i];
+    for( int j = 0; j < 2 ; ++j )
+      A(i,j) = C[i][j];
+  }
+
+  cv::solve(A,bx,x);
+  cv::solve(A,by,y);
+
+  double opt_x[2],opt_y[2];
+  for( int i = 0 ; i < 2 ; ++i ){
+    opt_x[i] = x(i,0);
+    opt_y[i] = y(i,0);
   }
   
+  double err = 0.0;
+  
+  for( size_t i = 0 ; i < N ; ++i ){
+    double tp = static_cast<double>(i) / static_cast<double>(N-1);
+    double weight = 1.0 - wp[i]/2.0;
+    double px = edge[i].x;
+    double py = edge[i].y;
+
+    double t[2];
+    for( int j = 0 ; j < 2 ; ++j ){
+      t[j] = 1.0;
+      for( int k = 0 ; k <    j  ; ++k )
+        t[j] *=   tp;
+      for( int k = 0 ; k < (1-j) ; ++k )
+        t[j] *= 1-tp;
+    }
+
+    double diff_x = -px;
+    double diff_y = -py;
+
+    for( int j = 0 ; j < 2 ; ++j ){
+      diff_x += t[j] * opt_x[j];
+      diff_y += t[j] * opt_y[j];
+    }
+
+    err += weight * ( diff_x * diff_x + diff_y * diff_y );
+  }
   std::vector<std::pair<double,double> > ret;
-  ret.push_back(std::make_pair(px0,py0));
-  ret.push_back(std::make_pair(px1,py1));
+  for( int j = 0 ; j < 2 ; ++j )
+    ret.push_back(std::make_pair(opt_x[j],opt_y[j]));
   return std::make_pair(err,ret);
 }
-
 
 std::pair<double,bezier>
 bezier_quadratic_fitting( const edge_t &edge, double w_max ){
@@ -142,7 +207,7 @@ bezier_quadratic_fitting( const edge_t &edge, double w_max ){
   }
   std::vector<std::pair<double,double> > ret;
   for( int j = 0 ; j < 3 ; ++j )
-    ret.push_back(std::make_pair(opt_x[j],opt_y[j]));std::cout << "err = " << err << " N = " << N << std::endl << x << "\n" << y <<"\n";
+    ret.push_back(std::make_pair(opt_x[j],opt_y[j]));
   return std::make_pair(err,ret);
 }
 
