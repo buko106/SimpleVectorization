@@ -19,9 +19,9 @@ po::options_description set_options(){
     ("input,i"  , po::value<fs::path>(),  "Input image file")
     ("output,o" , po::value<fs::path>(),  "Output directory")
     ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
-    ("tolerance,t", po::value<double>()->default_value(1.), "Tolarable average fitting error")
-    ("mu,m" , po::value<double>()->default_value(2.0), "Balance parameter for degree of bezier curves. High value means less dgree")
-    ("lambda,l" , po::value<double>()->default_value(0.5), "Balance parameter for fidelity and simplicity. Must be in range [0,1]. High value means high simplicity");
+    ("tolerance,t", po::value<double>()->default_value(2.), "Tolarable average fitting error")
+    ("mu,m" , po::value<double>()->default_value(3.0), "Balance parameter for degree of bezier curves. High value means less dgree")
+    ("lambda,l" , po::value<double>()->default_value(0.98), "Balance parameter for fidelity and simplicity. Must be in range [0,1]. High value means high simplicity");
   return opt;
 }
 
@@ -135,8 +135,9 @@ int main( int argc, char* argv[] ){
   int num  =   1000;
   fs::ofstream log(output/"log");
 
+  double normaled_lambda = lambda /( (1.-lambda)*(1.+3.*mu) + lambda );
   for( int i = 0 ; i < iter ; ++i ){
-    double U = hyper.step( lambda, mu );
+    double U = hyper.step( normaled_lambda, mu );
     log << i+1 << " " << U <<std::endl;
     if( i%num == num-1 ){
       // output graph
