@@ -20,6 +20,11 @@ private:
   double T;
   double w_max;
   edge_t to_edge_t( const hyperedge& ) const;
+  bool merge(double,double);
+  bool split(double,double);
+  bool degree_switch(double,double);
+  bool overlap(double,double);
+  bool dissociation(double,double);
 public:
   hypergraph();
   hypergraph( topology, BEZIER_DEG = CUBIC );
