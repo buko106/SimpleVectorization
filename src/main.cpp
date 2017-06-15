@@ -4,6 +4,7 @@
 #include"bezier.hpp"
 #include"svg.hpp"
 #include"hypergraph.hpp"
+#include"gui.hpp"
 #include<iostream>
 #include<boost/program_options.hpp>
 #include<boost/filesystem.hpp>
@@ -16,6 +17,7 @@ po::options_description set_options(){
   po::options_description opt("Options");
   opt.add_options()
     ("help,h"   ,                            "Show help")
+    ("disp,d"   ,                            "Always display drawing")
     ("input,i"  , po::value<fs::path>(),  "Input image file")
     ("output,o" , po::value<fs::path>(),  "Output directory")
     ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
@@ -136,24 +138,39 @@ int main( int argc, char* argv[] ){
   fs::ofstream log(output/"log");
 
   double normaled_lambda = lambda /( (1.-lambda)*(1.+1.5*mu) + lambda );
-  for( int i = 0 ; i < iter ; ++i ){
+  for( int i = 1 ; i <= iter ; ++i ){
     double U = hyper.step( normaled_lambda, mu );
-    log << i+1 << " " << U <<std::endl;
-    if( i%num == num-1 ){
-      // output graph
-      graph.open(output /"iter"/("iter"+std::to_string(i+1)+".svg"));
-      svg svg_iter(0,0,im.cols,im.rows);
+    log << i << " " << U <<std::endl;
 
+    if( i%num==0 || argmap.count("disp") ){
+      std::vector<bezier> v;
+      svg svg_iter(0,0,im.cols,im.rows);
+      
       std::vector< std::pair<edge_t,BEZIER_DEG> >
         curve = hyper.to_bezier();
       for( size_t c = 0 ; c < curve.size() ; ++c ){
         std::pair<double,bezier> res = bezier_fittting( curve[c].first, tp.w_max, curve[c].second );
-        svg_iter.push(res.second);
-        svg_iter.push(res.second[0].first,res.second[0].second);
-        svg_iter.push(res.second[res.second.size()-1].first,res.second[res.second.size()-1].second);
+        if( i%num == 0 ){
+          svg_iter.push(res.second);
+          svg_iter.push(res.second[0].first,res.second[0].second);
+          svg_iter.push(res.second[res.second.size()-1].first,res.second[res.second.size()-1].second);
+        }
+        if( argmap.count("disp") ){
+          v.push_back(res.second);
+        }
       }
-      graph << svg_iter << std::endl;
-      graph.close();
+
+      if( argmap.count("disp") ){
+        cv::namedWindow("image", CV_WINDOW_NORMAL|CV_WINDOW_KEEPRATIO);
+        cv::imshow("image", to_Mat(v,0,0,im.cols,im.rows) );
+        cv::waitKey(1);
+      }
+      if( i%num == 0 ){
+        // output graph
+        graph.open(output /"iter"/("iter"+std::to_string(i)+".svg"));
+        graph << svg_iter << std::endl;
+        graph.close();
+      }
     }
   }
   return 0;
