@@ -1,4 +1,5 @@
 #include"svg.hpp"
+#include"utils.hpp"
 
 void svg::setViewBox( int x0, int y0, int x1, int y1 ){
   viewBox[0] = x0;
@@ -14,14 +15,14 @@ svg::svg( int x0, int y0, int x1, int y1 ){
 }
 
 void svg::push( bezier curve, std::string color, int thickness ){
-  if( color == "" ) color = "blue";
+  if( color == "" || color == "random" ) color = random_generate_rgb();
   svg_config config = std::make_pair(thickness,color);
   curves.push_back(std::make_pair(curve,config));
   return;
 }
 
 void svg::push( double cx, double cy, std::string color, int radius ){
-  if( color == "" ) color = "red";
+  if( color == "" || color == "random" ) color = random_generate_rgb();
   svg_config config = std::make_pair(radius,color);
   circles.push_back(std::make_pair(std::make_pair(cx,cy),config));
   return;

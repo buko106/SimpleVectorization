@@ -1,6 +1,8 @@
 #include"gui.hpp"
 #include"bezier.hpp"
 
+cv::RNG rng( time(NULL) );
+
 std::pair<double,double>bezier_to_point( const bezier& curve, double tp ){
   const double choose[4][4] =
     { { 0.0, 0.0, 0.0, 0.0 },
@@ -26,7 +28,7 @@ std::pair<double,double>bezier_to_point( const bezier& curve, double tp ){
   return std::make_pair(x,y);
 }
 
-cv::Mat to_Mat( const std::vector<bezier>& curves, int x0, int y0, int x1, int y1, bool inv, size_t sample ){
+cv::Mat to_Mat( const std::vector<bezier>& curves, int x0, int y0, int x1, int y1, bool random, size_t sample ){
   cv::Scalar blue(255,0,0),red(0,0,255),white(255,255,255);
   cv::Mat img = cv::Mat(y1-y0,x1-x0,CV_8UC3,white);
   int thickness=1;
@@ -35,6 +37,8 @@ cv::Mat to_Mat( const std::vector<bezier>& curves, int x0, int y0, int x1, int y
   cv::Point* p = new cv::Point[sample];
   
   for( size_t i = 0 ; i < curves.size() ; ++i ){
+    cv::Scalar line_color = ( random ? cv::Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255)) : blue );
+    cv::Scalar circle_color = ( random ? cv::Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255)) : red );
     for( size_t j = 0 ; j < sample ; ++j ){
       double tp = static_cast<double>(j) / static_cast<double>(sample-1);
       std::pair<double,double> res = bezier_to_point( curves[i], tp );
@@ -42,12 +46,11 @@ cv::Mat to_Mat( const std::vector<bezier>& curves, int x0, int y0, int x1, int y
       p[j].y = cv::saturate_cast<int>(res.second);
     }
     for( size_t j = 0 ; j < sample-1 ; ++j ){
-      cv::line( img, p[j], p[j+1], blue, thickness, lineType );
+      cv::line( img, p[j], p[j+1], line_color, thickness, lineType );
     }
-    cv::circle(img,p[0],radius,red,-1);
-    cv::circle(img,p[sample-1],radius,red,-1);
+    cv::circle(img,p[0],radius,circle_color,-1);
+    cv::circle(img,p[sample-1],radius,circle_color,-1);
   }
 
-  if( inv ) return 255 - img;
-  else      return img;
+  return img;
 }

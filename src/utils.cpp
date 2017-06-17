@@ -1,6 +1,6 @@
 #include"utils.hpp"
 #include<random>
-
+#include<iomanip>
 cv::Mat_<uchar> imread_as_grayscale( std::string filename , bool inv ){
   int flag = 0; // 0 for grayscale, 1 for color
   cv::Mat_<uchar> image = cv::imread( filename, flag );
@@ -34,4 +34,24 @@ int random_generate_int( int a, int b ){
 double random_generate_uniform( double a, double b ){
   std::uniform_real_distribution<double> uniform_double(a,b);
   return uniform_double(mt);
+}
+
+std::string random_generate_rgb(){
+  int full = random_generate_int(0,2);
+  int zero;
+  while( full == ( zero = random_generate_int(0,2))){;}
+  int color[3];
+  for( int i = 0 ; i < 3 ; ++i ){
+    if( i == zero )      color[i] = 0x0;
+    else if( i == full ) color[i] = 0xf;
+    else                 color[i] = random_generate_int(0,5)*3;
+  }
+    
+  std::stringstream stream;
+  stream << "#"
+         << std::setfill ('0')
+         // << std::setw(2)
+         << std::hex
+         << color[0] << color[1] << color[2];
+  return stream.str();
 }

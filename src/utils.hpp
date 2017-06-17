@@ -8,3 +8,4 @@ cv::Mat_<uchar> to_binary_image( cv::Mat, double=-1 );
 
 double random_generate_uniform( double, double ); // x \in (a,b) \subset R
 int random_generate_int( int, int ); // x \in [a,b] \subset Z
+std::string random_generate_rgb();

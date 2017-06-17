@@ -18,6 +18,7 @@ po::options_description set_options(){
   opt.add_options()
     ("help,h"   ,                            "Show help")
     ("disp,d"   ,                            "Always display drawing")
+    ("random" ,                            "Result with randomized color drawing")
     ("input,i"  , po::value<fs::path>(),  "Input image file")
     ("output,o" , po::value<fs::path>(),  "Output directory")
     ("radius,r" , po::value<int>()->default_value(3), "Radius of trapped-ball")
@@ -93,15 +94,17 @@ int main( int argc, char* argv[] ){
 
 
   fs::ofstream graph(output / "graph.svg");
+  std::string line_color = ( argmap.count("random") ? "random" : "blue" );
+  std::string maker_color = ( argmap.count("random") ? "random" : "red");
 
   svg svg_graph(0,0,im.cols,im.rows);
   for( size_t i = 0 ; i < tp.edge.size() ; ++i ){
     std::pair<double,bezier>
       result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
-    svg_graph.push(curve);
-    svg_graph.push(curve[0].first,curve[0].second);
-    svg_graph.push(curve[curve.size()-1].first,curve[curve.size()-1].second);
+    svg_graph.push(curve,line_color);
+    svg_graph.push(curve[0].first,curve[0].second,maker_color);
+    svg_graph.push(curve[curve.size()-1].first,curve[curve.size()-1].second,maker_color);
   }
 
   graph << svg_graph << std::endl;
@@ -118,9 +121,9 @@ int main( int argc, char* argv[] ){
     std::pair<double,bezier>
       result = bezier_cubic_fitting( tp.edge[i], tp.w_max );
     bezier curve = result.second;
-    svg_refined.push(curve);
-    svg_refined.push(curve[0].first,curve[0].second);
-    svg_refined.push(curve[curve.size()-1].first,curve[curve.size()-1].second);
+    svg_refined.push(curve,line_color);
+    svg_refined.push(curve[0].first,curve[0].second,maker_color);
+    svg_refined.push(curve[curve.size()-1].first,curve[curve.size()-1].second,maker_color);
   }
 
   graph << svg_refined << std::endl;
@@ -151,9 +154,9 @@ int main( int argc, char* argv[] ){
       for( size_t c = 0 ; c < curve.size() ; ++c ){
         std::pair<double,bezier> res = bezier_fittting( curve[c].first, tp.w_max, curve[c].second );
         if( i%num == 0 ){
-          svg_iter.push(res.second);
-          svg_iter.push(res.second[0].first,res.second[0].second);
-          svg_iter.push(res.second[res.second.size()-1].first,res.second[res.second.size()-1].second);
+          svg_iter.push(res.second,line_color);
+          svg_iter.push(res.second[0].first,res.second[0].second,maker_color);
+          svg_iter.push(res.second[res.second.size()-1].first,res.second[res.second.size()-1].second,maker_color);
         }
         if( argmap.count("disp") ){
           v.push_back(res.second);
